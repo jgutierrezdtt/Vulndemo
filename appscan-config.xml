@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <Configuration enableSecrets="true">
   <Targets>
-    <Target path=""/>
+    <Target path="."/>
+    <Target path="./public"/>
+    <Target path="./server.js"/>
+    <Target path="./app.js"/>
+    <Target path="./database.js"/>
   </Targets>
+  <ScanOptions>
+    <ScanTimeout>120</ScanTimeout>
+    <FollowSymlinks>true</FollowSymlinks>
+  </ScanOptions>
 </Configuration>

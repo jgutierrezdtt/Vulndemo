@@ -1,0 +1,61 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:  # Permite ejecutar el workflow manualmente desde la interfaz de GitHub
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Checkout security tools
+        uses: actions/checkout@v3
+        with:
+          repository: jgutierrezdtt/Secure
+          path: secure-tools
+      
+      - name: Install dependencies for security tools
+        run: |
+          cd secure-tools
+          npm install
+      
+      - name: Run SAST scan
+        run: |
+          cd secure-tools
+          node sast-scanner.js --target-dir=$GITHUB_WORKSPACE --output-file=$GITHUB_WORKSPACE/sast-results.json
+      
+      - name: Run Dependency check
+        run: |
+          cd secure-tools
+          node dependency-check.js --project-dir=$GITHUB_WORKSPACE --output-file=$GITHUB_WORKSPACE/dependency-results.json
+      
+      - name: Run Secret Scanner
+        run: |
+          cd secure-tools
+          node secret-scanner.js --scan-dir=$GITHUB_WORKSPACE --output-file=$GITHUB_WORKSPACE/secrets-results.json
+      
+      - name: Generate HTML report
+        run: |
+          cd secure-tools
+          node generate-report.js --sast-results=$GITHUB_WORKSPACE/sast-results.json --dependency-results=$GITHUB_WORKSPACE/dependency-results.json --secrets-results=$GITHUB_WORKSPACE/secrets-results.json --output-html=$GITHUB_WORKSPACE/security-report.html
+      
+      - name: Upload security report
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-reports
+          path: |
+            ${{ github.workspace }}/sast-results.json
+            ${{ github.workspace }}/dependency-results.json
+            ${{ github.workspace }}/secrets-results.json
+            ${{ github.workspace }}/security-report.html
