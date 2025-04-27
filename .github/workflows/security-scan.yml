@@ -23,6 +23,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: jgutierrezdtt/Secure
+          ref: master  # Especificando explícitamente la rama 'master' del repositorio
           path: secure-tools
       
       - name: Install dependencies for security tools
