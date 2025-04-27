@@ -14,42 +14,35 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      # Usar directamente la acción de SAST desde el repositorio jgutierrezdtt/Secure
+      - name: Run SAST Analysis
+        uses: jgutierrezdtt/Secure/.github/workflows/sast-scan.yml@master
         with:
-          node-version: '18'
-
-      - name: Checkout security tools
-        uses: actions/checkout@v3
+          scan_target: ${{ github.workspace }}
+          output_file: sast-results.json
+      
+      # Usar directamente la acción de análisis de dependencias desde el repositorio
+      - name: Run Dependency Analysis
+        uses: jgutierrezdtt/Secure/.github/workflows/dependency-check.yml@master
         with:
-          repository: jgutierrezdtt/Secure
-          ref: master  # Especificando explícitamente la rama 'master' del repositorio
-          path: secure-tools
+          project_dir: ${{ github.workspace }}
+          output_file: dependency-results.json
       
-      - name: Install dependencies for security tools
-        run: |
-          cd secure-tools
-          npm install
+      # Usar directamente la acción de escaneo de secretos desde el repositorio
+      - name: Run Secret Scan
+        uses: jgutierrezdtt/Secure/.github/workflows/secret-scan.yml@master
+        with:
+          scan_dir: ${{ github.workspace }}
+          output_file: secrets-results.json
       
-      - name: Run SAST scan
-        run: |
-          cd secure-tools
-          node sast-scanner.js --target-dir=$GITHUB_WORKSPACE --output-file=$GITHUB_WORKSPACE/sast-results.json
-      
-      - name: Run Dependency check
-        run: |
-          cd secure-tools
-          node dependency-check.js --project-dir=$GITHUB_WORKSPACE --output-file=$GITHUB_WORKSPACE/dependency-results.json
-      
-      - name: Run Secret Scanner
-        run: |
-          cd secure-tools
-          node secret-scanner.js --scan-dir=$GITHUB_WORKSPACE --output-file=$GITHUB_WORKSPACE/secrets-results.json
-      
-      - name: Generate HTML report
-        run: |
-          cd secure-tools
-          node generate-report.js --sast-results=$GITHUB_WORKSPACE/sast-results.json --dependency-results=$GITHUB_WORKSPACE/dependency-results.json --secrets-results=$GITHUB_WORKSPACE/secrets-results.json --output-html=$GITHUB_WORKSPACE/security-report.html
+      # Usar la acción para generar el informe HTML
+      - name: Generate Security Report
+        uses: jgutierrezdtt/Secure/.github/workflows/generate-report.yml@master
+        with:
+          sast_results: ${{ github.workspace }}/sast-results.json
+          dependency_results: ${{ github.workspace }}/dependency-results.json
+          secrets_results: ${{ github.workspace }}/secrets-results.json
+          output_html: ${{ github.workspace }}/security-report.html
       
       - name: Upload security report
         uses: actions/upload-artifact@v3
