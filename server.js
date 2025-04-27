@@ -49,6 +49,9 @@ app.use((req, res, next) => {
   next();
 });
 
+// Middleware para servir archivos estáticos correctamente
+app.use('/static', express.static(path.join(__dirname, 'public')));
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Importar y usar las rutas de la base de datos
