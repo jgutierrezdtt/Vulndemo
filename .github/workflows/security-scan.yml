@@ -20,7 +20,7 @@ jobs:
   # Trabajo para el análisis SAST
   sast-analysis:
     needs: prepare
-    uses: jgutierrezdtt/Secure/.github/workflows/sast-scan.yml@master
+    uses: jgutierrezdtt/Secure/.github/workflows/templates/sast-scan.yml@main
     with:
       scan_target: ${{ needs.prepare.outputs.workspace }}
       output_file: sast-results.json
@@ -28,7 +28,7 @@ jobs:
   # Trabajo para el análisis de dependencias
   dependency-analysis:
     needs: prepare
-    uses: jgutierrezdtt/Secure/.github/workflows/dependency-check.yml@master
+    uses: jgutierrezdtt/Secure/.github/workflows/templates/dependency-check.yml@main
     with:
       project_dir: ${{ needs.prepare.outputs.workspace }}
       output_file: dependency-results.json
@@ -36,7 +36,7 @@ jobs:
   # Trabajo para el escaneo de secretos
   secret-scan:
     needs: prepare
-    uses: jgutierrezdtt/Secure/.github/workflows/secret-scan.yml@master
+    uses: jgutierrezdtt/Secure/.github/workflows/templates/secret-scan.yml@main
     with:
       scan_dir: ${{ needs.prepare.outputs.workspace }}
       output_file: secrets-results.json
@@ -44,11 +44,11 @@ jobs:
   # Trabajo para generar el informe HTML
   generate-report:
     needs: [sast-analysis, dependency-analysis, secret-scan]
-    uses: jgutierrezdtt/Secure/.github/workflows/generate-report.yml@master
+    uses: jgutierrezdtt/Secure/.github/workflows/templates/generate-report.yml@main
     with:
-      sast_results: ${{ needs.sast-analysis.outputs.result_path }}
-      dependency_results: ${{ needs.dependency-analysis.outputs.result_path }}
-      secrets_results: ${{ needs.secret-scan.outputs.result_path }}
+      sast_results: sast-results.json
+      dependency_results: dependency-results.json
+      secrets_results: secrets-results.json
       output_html: security-report.html
 
   # Trabajo para subir los informes como artefactos
