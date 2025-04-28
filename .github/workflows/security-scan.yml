@@ -8,48 +8,63 @@ on:
   workflow_dispatch:  # Permite ejecutar el workflow manualmente desde la interfaz de GitHub
 
 jobs:
-  security-scan:
+  # Checkout del código para tenerlo disponible para los flujos de trabajo llamados
+  prepare:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+    outputs:
+      workspace: ${{ github.workspace }}
 
-      # Usar directamente la acción de SAST desde el repositorio jgutierrezdtt/Secure
-      - name: Run SAST Analysis
-        uses: jgutierrezdtt/Secure/.github/workflows/sast-scan.yml@master
-        with:
-          scan_target: ${{ github.workspace }}
-          output_file: sast-results.json
-      
-      # Usar directamente la acción de análisis de dependencias desde el repositorio
-      - name: Run Dependency Analysis
-        uses: jgutierrezdtt/Secure/.github/workflows/dependency-check.yml@master
-        with:
-          project_dir: ${{ github.workspace }}
-          output_file: dependency-results.json
-      
-      # Usar directamente la acción de escaneo de secretos desde el repositorio
-      - name: Run Secret Scan
-        uses: jgutierrezdtt/Secure/.github/workflows/secret-scan.yml@master
-        with:
-          scan_dir: ${{ github.workspace }}
-          output_file: secrets-results.json
-      
-      # Usar la acción para generar el informe HTML
-      - name: Generate Security Report
-        uses: jgutierrezdtt/Secure/.github/workflows/generate-report.yml@master
-        with:
-          sast_results: ${{ github.workspace }}/sast-results.json
-          dependency_results: ${{ github.workspace }}/dependency-results.json
-          secrets_results: ${{ github.workspace }}/secrets-results.json
-          output_html: ${{ github.workspace }}/security-report.html
-      
+  # Trabajo para el análisis SAST
+  sast-analysis:
+    needs: prepare
+    uses: jgutierrezdtt/Secure/.github/workflows/sast-scan.yml@master
+    with:
+      scan_target: ${{ needs.prepare.outputs.workspace }}
+      output_file: sast-results.json
+
+  # Trabajo para el análisis de dependencias
+  dependency-analysis:
+    needs: prepare
+    uses: jgutierrezdtt/Secure/.github/workflows/dependency-check.yml@master
+    with:
+      project_dir: ${{ needs.prepare.outputs.workspace }}
+      output_file: dependency-results.json
+
+  # Trabajo para el escaneo de secretos
+  secret-scan:
+    needs: prepare
+    uses: jgutierrezdtt/Secure/.github/workflows/secret-scan.yml@master
+    with:
+      scan_dir: ${{ needs.prepare.outputs.workspace }}
+      output_file: secrets-results.json
+
+  # Trabajo para generar el informe HTML
+  generate-report:
+    needs: [sast-analysis, dependency-analysis, secret-scan]
+    uses: jgutierrezdtt/Secure/.github/workflows/generate-report.yml@master
+    with:
+      sast_results: ${{ needs.sast-analysis.outputs.result_path }}
+      dependency_results: ${{ needs.dependency-analysis.outputs.result_path }}
+      secrets_results: ${{ needs.secret-scan.outputs.result_path }}
+      output_html: security-report.html
+
+  # Trabajo para subir los informes como artefactos
+  upload-reports:
+    needs: generate-report
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all workflow run artifacts
+        uses: actions/download-artifact@v3
+        
       - name: Upload security report
         uses: actions/upload-artifact@v3
         with:
           name: security-reports
           path: |
-            ${{ github.workspace }}/sast-results.json
-            ${{ github.workspace }}/dependency-results.json
-            ${{ github.workspace }}/secrets-results.json
-            ${{ github.workspace }}/security-report.html
+            sast-results.json
+            dependency-results.json
+            secrets-results.json
+            security-report.html
