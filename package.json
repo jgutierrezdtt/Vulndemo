@@ -15,7 +15,7 @@
     "@google-cloud/translate": "^8.5.1",
     "@vitalets/google-translate-api": "^9.2.1",
     "adm-zip": "^0.5.16",
-    "axios": "^1.8.3",
+    "axios": "^1.9.0",
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
     "deepl-scraper": "^1.0.11",
